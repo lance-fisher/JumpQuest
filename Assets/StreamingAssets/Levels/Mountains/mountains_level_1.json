@@ -1,0 +1,57 @@
+{
+    "worldId": "mountains",
+    "levelName": "Rocky Ridge",
+    "difficulty": 3,
+    "parTime": 75,
+    "setting": "midclimb",
+    "finishType": "portal",
+    "playerSpawn": { "x": 0, "y": 2, "z": 0 },
+    "platforms": [
+        { "x": 0, "y": 0, "z": 0, "sx": 8, "sy": 1, "sz": 8, "color": "stone" },
+        { "x": 2, "y": 1, "z": 7, "sx": 4, "sy": 0.5, "sz": 3, "color": "brown" },
+        { "x": -2, "y": 2, "z": 13, "sx": 3.5, "sy": 0.5, "sz": 3, "color": "stone" },
+        { "x": 3, "y": 3.5, "z": 21, "sx": 4, "sy": 0.5, "sz": 4, "color": "brown" },
+        { "x": -1, "y": 4.5, "z": 28, "sx": 3.5, "sy": 0.5, "sz": 3, "color": "stone" },
+        { "x": 0, "y": 5, "z": 35, "sx": 5, "sy": 0.5, "sz": 5, "color": "brown" },
+        { "x": 3, "y": 6, "z": 42, "sx": 3, "sy": 0.5, "sz": 3, "color": "stone" },
+        { "x": -2, "y": 7, "z": 48, "sx": 3.5, "sy": 0.5, "sz": 3, "color": "brown" },
+        { "x": 1, "y": 8, "z": 55, "sx": 4, "sy": 0.5, "sz": 4, "color": "stone" },
+        { "x": 0, "y": 8.5, "z": 62, "sx": 6, "sy": 1, "sz": 6, "color": "stone" }
+    ],
+    "movingPlatforms": [
+        {
+            "x": 0, "y": 2.5, "z": 17,
+            "sx": 3, "sy": 0.5, "sz": 3,
+            "waypoints": [
+                { "x": 0, "y": 0, "z": 0 },
+                { "x": 5, "y": 0, "z": 0 }
+            ],
+            "speed": 2.5,
+            "loop": true
+        }
+    ],
+    "rotatingObstacles": [
+        { "x": 0, "y": 7.5, "z": 51, "sx": 5, "sy": 0.4, "sz": 0.4, "ax": 0, "ay": 1, "az": 0, "speed": 70 }
+    ],
+    "jumpPads": [
+        { "x": 0, "y": 5.3, "z": 35, "force": 16 }
+    ],
+    "coins": [
+        { "x": 2, "y": 3, "z": 7, "value": 1 },
+        { "x": 0, "y": 4.5, "z": 17, "value": 1 },
+        { "x": 3, "y": 5.5, "z": 21, "value": 1 },
+        { "x": -1, "y": 6.5, "z": 28, "value": 1 },
+        { "x": 0, "y": 7.5, "z": 35, "value": 2 },
+        { "x": 3, "y": 8, "z": 42, "value": 1 },
+        { "x": -2, "y": 9, "z": 48, "value": 1 },
+        { "x": 1, "y": 10, "z": 55, "value": 2 }
+    ],
+    "checkpoints": [
+        { "x": -2, "y": 2.5, "z": 13, "index": 0 },
+        { "x": 0, "y": 5.5, "z": 35, "index": 1 }
+    ],
+    "hazards": [
+        { "x": 1, "y": 3, "z": 25, "sx": 3, "sy": 0.3, "sz": 1, "type": "spike" }
+    ],
+    "finish": { "x": 0, "y": 9.5, "z": 62 }
+}

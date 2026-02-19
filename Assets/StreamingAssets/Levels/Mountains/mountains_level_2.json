@@ -1,0 +1,78 @@
+{
+    "worldId": "mountains",
+    "levelName": "Summit Storm",
+    "difficulty": 5,
+    "parTime": 100,
+    "setting": "peak",
+    "finishType": "chest",
+    "playerSpawn": { "x": 0, "y": 2, "z": 0 },
+    "platforms": [
+        { "x": 0, "y": 0, "z": 0, "sx": 8, "sy": 1, "sz": 8, "color": "snow" },
+        { "x": -2, "y": 1.5, "z": 6, "sx": 3, "sy": 0.5, "sz": 3, "color": "snow" },
+        { "x": 3, "y": 2.5, "z": 12, "sx": 3, "sy": 0.5, "sz": 2.5, "color": "stone" },
+        { "x": -1, "y": 4, "z": 20, "sx": 3, "sy": 0.5, "sz": 3, "color": "snow" },
+        { "x": 2, "y": 5.5, "z": 28, "sx": 3.5, "sy": 0.5, "sz": 3, "color": "stone" },
+        { "x": 0, "y": 6, "z": 35, "sx": 5, "sy": 0.5, "sz": 5, "color": "snow" },
+        { "x": -3, "y": 7.5, "z": 42, "sx": 3, "sy": 0.5, "sz": 3, "color": "stone" },
+        { "x": 3, "y": 9, "z": 50, "sx": 2.5, "sy": 0.5, "sz": 2.5, "color": "snow" },
+        { "x": 0, "y": 10, "z": 56, "sx": 3, "sy": 0.5, "sz": 3, "color": "stone" },
+        { "x": -2, "y": 11.5, "z": 63, "sx": 3, "sy": 0.5, "sz": 3, "color": "snow" },
+        { "x": 2, "y": 12.5, "z": 70, "sx": 3, "sy": 0.5, "sz": 3, "color": "stone" },
+        { "x": 0, "y": 13, "z": 78, "sx": 7, "sy": 1, "sz": 7, "color": "snow" }
+    ],
+    "movingPlatforms": [
+        {
+            "x": 1, "y": 3, "z": 16,
+            "sx": 3, "sy": 0.5, "sz": 3,
+            "waypoints": [
+                { "x": 0, "y": 0, "z": 0 },
+                { "x": -4, "y": 1, "z": 0 }
+            ],
+            "speed": 3,
+            "loop": true
+        },
+        {
+            "x": 0, "y": 8, "z": 46,
+            "sx": 2.5, "sy": 0.5, "sz": 2.5,
+            "waypoints": [
+                { "x": 0, "y": 0, "z": 0 },
+                { "x": 4, "y": 0, "z": 0 }
+            ],
+            "speed": 3.5,
+            "loop": true
+        }
+    ],
+    "rotatingObstacles": [
+        { "x": 2, "y": 6.5, "z": 30, "sx": 6, "sy": 0.4, "sz": 0.4, "ax": 0, "ay": 1, "az": 0, "speed": 90 },
+        { "x": 0, "y": 11, "z": 60, "sx": 5, "sy": 0.4, "sz": 0.4, "ax": 0, "ay": 1, "az": 0, "speed": 100 }
+    ],
+    "jumpPads": [
+        { "x": 0, "y": 6.3, "z": 35, "force": 18 },
+        { "x": 2, "y": 13.3, "z": 74, "force": 14 }
+    ],
+    "coins": [
+        { "x": -2, "y": 3.5, "z": 6, "value": 1 },
+        { "x": 1, "y": 5, "z": 16, "value": 1 },
+        { "x": 3, "y": 4.5, "z": 12, "value": 1 },
+        { "x": -1, "y": 6, "z": 20, "value": 1 },
+        { "x": 2, "y": 7.5, "z": 28, "value": 2 },
+        { "x": 0, "y": 8, "z": 35, "value": 1 },
+        { "x": -3, "y": 9.5, "z": 42, "value": 1 },
+        { "x": 0, "y": 10, "z": 46, "value": 1 },
+        { "x": 3, "y": 11, "z": 50, "value": 2 },
+        { "x": 0, "y": 12, "z": 56, "value": 1 },
+        { "x": -2, "y": 13.5, "z": 63, "value": 1 },
+        { "x": 2, "y": 14.5, "z": 70, "value": 2 }
+    ],
+    "checkpoints": [
+        { "x": -1, "y": 4.5, "z": 20, "index": 0 },
+        { "x": 0, "y": 6.5, "z": 35, "index": 1 },
+        { "x": 0, "y": 10.5, "z": 56, "index": 2 }
+    ],
+    "hazards": [
+        { "x": 0, "y": 2, "z": 9, "sx": 6, "sy": 0.3, "sz": 1, "type": "spike" },
+        { "x": 1, "y": 5, "z": 24, "sx": 4, "sy": 0.3, "sz": 1, "type": "spike" },
+        { "x": -1, "y": 10, "z": 53, "sx": 3, "sy": 0.2, "sz": 3, "type": "lava" }
+    ],
+    "finish": { "x": 0, "y": 14, "z": 78 }
+}

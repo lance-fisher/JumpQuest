@@ -1,0 +1,35 @@
+{
+    "worldId": "mountains",
+    "levelName": "Foothill Trail",
+    "difficulty": 1,
+    "parTime": 60,
+    "setting": "foothills",
+    "finishType": "flag",
+    "playerSpawn": { "x": 0, "y": 2, "z": 0 },
+    "platforms": [
+        { "x": 0, "y": 0, "z": 0, "sx": 8, "sy": 1, "sz": 8, "color": "stone" },
+        { "x": 0, "y": 0.5, "z": 8, "sx": 5, "sy": 0.5, "sz": 4, "color": "brown" },
+        { "x": 3, "y": 1, "z": 14, "sx": 4, "sy": 0.5, "sz": 4, "color": "stone" },
+        { "x": -1, "y": 1.5, "z": 20, "sx": 5, "sy": 0.5, "sz": 4, "color": "brown" },
+        { "x": 2, "y": 2, "z": 26, "sx": 4, "sy": 0.5, "sz": 4, "color": "stone" },
+        { "x": -2, "y": 2.5, "z": 32, "sx": 5, "sy": 0.5, "sz": 5, "color": "brown" },
+        { "x": 1, "y": 3, "z": 38, "sx": 4, "sy": 0.5, "sz": 4, "color": "stone" },
+        { "x": 0, "y": 3.5, "z": 45, "sx": 6, "sy": 1, "sz": 6, "color": "stone" }
+    ],
+    "movingPlatforms": [],
+    "rotatingObstacles": [],
+    "jumpPads": [],
+    "coins": [
+        { "x": 0, "y": 2.5, "z": 8, "value": 1 },
+        { "x": 3, "y": 3, "z": 14, "value": 1 },
+        { "x": -1, "y": 3.5, "z": 20, "value": 1 },
+        { "x": 2, "y": 4, "z": 26, "value": 1 },
+        { "x": -2, "y": 4.5, "z": 32, "value": 1 },
+        { "x": 1, "y": 5, "z": 38, "value": 1 }
+    ],
+    "checkpoints": [
+        { "x": -1, "y": 2, "z": 20, "index": 0 }
+    ],
+    "hazards": [],
+    "finish": { "x": 0, "y": 4.5, "z": 45 }
+}
