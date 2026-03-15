@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="description" content="Jump Quest! A 3D obby platformer for kids. Run, jump, and collect coins across 5 themed worlds. Play with keyboard, Xbox controller, or touch controls.">
 <title>Jamison Gaming's Jump Quest!</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -111,6 +112,16 @@ canvas#game { display: block; width: 100vw; height: 100vh; }
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
+@keyframes floatUp {
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  25%  { opacity: 1; transform: translate(-50%, -75%) scale(1.15); }
+  100% { opacity: 0; transform: translate(-50%, -160%) scale(0.85); }
+}
+@keyframes screenPulse {
+  0%   { opacity: 0; }
+  20%  { opacity: 1; }
+  100% { opacity: 0; }
+}
 </style>
 </head>
 <body>
@@ -123,6 +134,13 @@ canvas#game { display: block; width: 100vw; height: 100vh; }
     <div id="coin-display">0</div>
     <div id="timer-display">00:00</div>
     <button id="pause-btn" onclick="Game.pause()">| |</button>
+  </div>
+  <div style="padding:0 18px 6px;display:flex;align-items:center;gap:8px;">
+    <span style="color:rgba(255,255,255,0.5);font-size:11px;letter-spacing:1px;font-weight:bold;">START</span>
+    <div style="flex:1;height:9px;background:rgba(0,0,0,0.35);border-radius:5px;overflow:hidden;border:1px solid rgba(255,255,255,0.15);">
+      <div id="progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#33ee55,#ffdd00,#ff6600);border-radius:5px;transition:width 0.2s ease-out;"></div>
+    </div>
+    <span style="color:rgba(255,255,255,0.5);font-size:11px;letter-spacing:1px;font-weight:bold;">FINISH</span>
   </div>
 </div>
 
@@ -333,6 +351,160 @@ function skinColor(id) {
   return c ? parseInt(c.color.replace('#',''), 16) : 0x3399ff;
 }
 
+// ===== PROCEDURAL TEXTURES =====
+const _texCache = {};
+function makeTexture(type) {
+  if (_texCache[type]) return _texCache[type];
+  const size = 256;
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  const palettes = {
+    stone:    { base:'#9a9a88', spots:['#777766','#aaaa99','#888877'], lines:true,  step:40 },
+    brown:    { base:'#8c5a33', spots:['#6b4326','#a06a40','#7a4c2c'], lines:false },
+    snow:     { base:'#e0e8f4', spots:['#c8d4e8','#f0f4ff','#d0dcee'], lines:false },
+    green:    { base:'#3a9a3a', spots:['#2a7a2a','#4aaa4a','#347834'], lines:false },
+    gray:     { base:'#888888', spots:['#666666','#aaaaaa','#797979'], lines:false },
+    wood:     { base:'#a06830', spots:['#804820','#c08040','#906028'], lines:true,  step:18 },
+    red:      { base:'#cc3333', spots:['#aa2222','#dd4444','#bb3030'], lines:false },
+    lava:     { base:'#cc4400', spots:['#882200','#ff6600','#aa3300'], lines:false },
+    lavarock: { base:'#553322', spots:['#331100','#774433','#442211'], lines:false },
+  };
+  const p = palettes[type] || palettes.gray;
+  ctx.fillStyle = p.base;
+  ctx.fillRect(0, 0, size, size);
+  for (let i = 0; i < 130; i++) {
+    ctx.beginPath();
+    ctx.arc(Math.random()*size, Math.random()*size, 1+Math.random()*8, 0, Math.PI*2);
+    ctx.fillStyle = p.spots[Math.floor(Math.random()*p.spots.length)];
+    ctx.globalAlpha = 0.2 + Math.random()*0.45;
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  if (p.lines) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+    ctx.lineWidth = 1.5;
+    for (let x = 0; x <= size; x += p.step) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,size); ctx.stroke(); }
+    for (let y = 0; y <= size; y += p.step) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(size,y); ctx.stroke(); }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(2, 2);
+  _texCache[type] = tex;
+  return tex;
+}
+
+// ===== VISUAL EFFECTS HELPERS =====
+
+function spawnParticleBurst(pos, color, count) {
+  if (!scene) return;
+  color = color || 0xffdd33;
+  count = count || 18;
+  for (let i = 0; i < count; i++) {
+    const geo = new THREE.SphereGeometry(0.12 + Math.random() * 0.14, 5, 5);
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 1.2, roughness: 0.3, metalness: 0.4 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(pos);
+    scene.add(mesh);
+    const speed = 3 + Math.random() * 5;
+    const theta = Math.random() * Math.PI * 2;
+    const phi   = Math.random() * Math.PI;
+    state.particles.push({
+      mesh,
+      vx: Math.sin(phi) * Math.cos(theta) * speed,
+      vy: Math.cos(phi) * speed + 2,
+      vz: Math.sin(phi) * Math.sin(theta) * speed,
+      life: 0.55 + Math.random() * 0.45
+    });
+  }
+}
+
+function showFloatingText(text, color) {
+  color = color || '#ffe033';
+  const el = document.createElement('div');
+  el.textContent = text;
+  el.style.cssText = `position:fixed;left:50%;top:48%;transform:translate(-50%,-50%);
+    color:${color};font-family:'Arial Black',sans-serif;font-size:2.4rem;font-weight:900;
+    text-shadow:0 0 18px ${color},0 2px 8px rgba(0,0,0,0.8);
+    pointer-events:none;z-index:9999;animation:floatUp 1.15s ease-out forwards;white-space:nowrap;`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1200);
+}
+
+function triggerCheckpointEffect(pos) {
+  // Screen flash
+  const flash = document.createElement('div');
+  flash.style.cssText = `position:fixed;inset:0;background:rgba(80,255,120,0.28);
+    pointer-events:none;z-index:9990;animation:screenPulse 0.7s ease-out forwards;`;
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 750);
+  // Floating text
+  showFloatingText('✓ CHECKPOINT!', '#44ff88');
+  // Particle burst
+  spawnParticleBurst(pos, 0x44ff88, 22);
+}
+
+function addSkyEffects(scene) {
+  if (state.skyGroup) { scene.remove(state.skyGroup); }
+  const grp = new THREE.Group();
+  // Clouds (9 puffy white clusters)
+  for (let i = 0; i < 9; i++) {
+    const cg = new THREE.Group();
+    const nBalls = 3 + Math.floor(Math.random() * 4);
+    for (let j = 0; j < nBalls; j++) {
+      const r = 1.8 + Math.random() * 2.2;
+      const geo = new THREE.SphereGeometry(r, 7, 7);
+      const mat = new THREE.MeshStandardMaterial({ color: 0xf0f4ff, roughness: 1, metalness: 0, transparent: true, opacity: 0.82 });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set((j - nBalls/2) * 2.5 + (Math.random()-0.5)*1.5, (Math.random()-0.5)*1.5, (Math.random()-0.5)*2);
+      cg.add(m);
+    }
+    cg.position.set((Math.random()-0.5)*80, 22 + Math.random()*12, -20 + Math.random()*120);
+    cg.userData.driftX = (Math.random()-0.5)*0.6;
+    cg.userData.driftZ = (Math.random()-0.5)*0.4;
+    grp.add(cg);
+  }
+  // Birds (4 simple V-shapes)
+  for (let i = 0; i < 4; i++) {
+    const bg = new THREE.Group();
+    const wingMat = new THREE.MeshStandardMaterial({ color: 0x333344, roughness: 0.7 });
+    [-1, 1].forEach(side => {
+      const geo = new THREE.BoxGeometry(0.9, 0.08, 0.35);
+      const m = new THREE.Mesh(geo, wingMat);
+      m.position.set(side * 0.5, 0, 0);
+      m.rotation.z = side * 0.3;
+      bg.add(m);
+    });
+    bg.position.set((Math.random()-0.5)*60, 20 + Math.random()*10, -10 + Math.random()*90);
+    bg.userData.speed = 4 + Math.random() * 4;
+    bg.userData.flapTimer = Math.random() * Math.PI * 2;
+    grp.add(bg);
+  }
+  scene.add(grp);
+  state.skyGroup = grp;
+}
+
+function addFlyingObstacles(levelData, scene) {
+  // Remove old
+  state.flyingObstacles.forEach(o => scene.remove(o.mesh));
+  state.flyingObstacles = [];
+  // Spawn 3-5 patrol boulders
+  const count = 3 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < count; i++) {
+    const geo = new THREE.OctahedronGeometry(0.9 + Math.random() * 0.5, 0);
+    const mat = new THREE.MeshStandardMaterial({ map: makeTexture('lavarock'), color: 0xcc4400, roughness: 0.7, metalness: 0.15, emissive: 0x330800, emissiveIntensity: 0.4 });
+    const mesh = new THREE.Mesh(geo, mat);
+    const centerX = (Math.random()-0.5)*20;
+    const z = 10 + i * (80 / count) + Math.random() * 8;
+    const y = 8 + Math.random() * 8;
+    mesh.position.set(centerX, y, z);
+    mesh.userData = { centerX, amplitude: 6 + Math.random() * 6, speed: 1.2 + Math.random() * 1.5, phase: Math.random() * Math.PI * 2 };
+    scene.add(mesh);
+    state.flyingObstacles.push({ mesh });
+  }
+}
+
 // ===== THREE.JS SETUP =====
 const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -383,6 +555,13 @@ const state = {
   finishObj: null,
   playerMesh: null,
   hatMesh: null,
+  // Visual effects
+  particles: [],
+  skyGroup: null,
+  flyingObstacles: [],
+  levelSpawnZ: 0,
+  levelEndZ: 100,
+  lastMilestoneCoin: 0,
   // Results cache
   lastCoins: 0, lastTime: 0, lastTimeBonus: 0, lastCurrency: 0, lastXp: 0,
 };
@@ -657,23 +836,24 @@ function loadLevel(levelData) {
   state.rotatingObstacles = [];
   state.jumpPads = [];
   state.hazards = [];
+  state.particles.forEach(p => scene.remove(p.mesh));
+  state.particles = [];
+  state.lastMilestoneCoin = 0;
 
   const group = new THREE.Group();
   state.levelGroup = group;
 
-  // Ground plane
-  const groundGeo = new THREE.PlaneGeometry(200, 200);
-  const groundMat = new THREE.MeshStandardMaterial({ color: 0x599950 });
-  const ground = new THREE.Mesh(groundGeo, groundMat);
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -0.5;
-  ground.receiveShadow = true;
-  group.add(ground);
+  // Pick texture based on worldId
+  const worldTexMap = { 1:'stone', 2:'green', 3:'gray', 4:'snow', 5:'wood', 6:'lavarock' };
+  const platTex = makeTexture(worldTexMap[levelData.worldId] || 'stone');
+  const movTex  = makeTexture('brown');
+  const rotTex  = makeTexture('red');
+  const hazTex  = { lava:'lava', spike:'gray', default:'red' };
 
   // Platforms
   for (const p of (levelData.platforms || [])) {
     const geo = new THREE.BoxGeometry(p.sx || 4, p.sy || 0.5, p.sz || 4);
-    const mat = new THREE.MeshStandardMaterial({ color: parseColor(p.color) });
+    const mat = new THREE.MeshStandardMaterial({ map: platTex, color: parseColor(p.color), roughness: 0.75, metalness: 0.05 });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(p.x, p.y, p.z);
     mesh.castShadow = true;
@@ -686,7 +866,7 @@ function loadLevel(levelData) {
   // Moving platforms
   for (const mp of (levelData.movingPlatforms || [])) {
     const geo = new THREE.BoxGeometry(mp.sx || 3, mp.sy || 0.5, mp.sz || 3);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x4db84d });
+    const mat = new THREE.MeshStandardMaterial({ map: movTex, color: 0x66cc66, roughness: 0.6, metalness: 0.1 });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(mp.x, mp.y, mp.z);
     mesh.castShadow = true;
@@ -701,7 +881,7 @@ function loadLevel(levelData) {
   // Rotating obstacles
   for (const ro of (levelData.rotatingObstacles || [])) {
     const geo = new THREE.BoxGeometry(ro.sx || 6, ro.sy || 0.4, ro.sz || 0.4);
-    const mat = new THREE.MeshStandardMaterial({ color: 0xe63333 });
+    const mat = new THREE.MeshStandardMaterial({ map: rotTex, color: 0xdd2222, roughness: 0.5, metalness: 0.2, emissive: 0x440000, emissiveIntensity: 0.3 });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(ro.x, ro.y, ro.z);
     mesh.castShadow = true;
@@ -714,7 +894,7 @@ function loadLevel(levelData) {
   // Jump pads
   for (const jp of (levelData.jumpPads || [])) {
     const geo = new THREE.CylinderGeometry(0.75, 0.75, 0.3, 16);
-    const mat = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0x664400 });
+    const mat = new THREE.MeshStandardMaterial({ color: 0xffdd00, emissive: 0xffaa00, emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.5 });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(jp.x, jp.y, jp.z);
     mesh.userData.type = 'jumppad';
@@ -723,39 +903,66 @@ function loadLevel(levelData) {
     group.add(mesh);
   }
 
-  // Coins
+  // Coins (with sparkle satellite orbits)
   for (const c of (levelData.coins || [])) {
-    const geo = new THREE.CylinderGeometry(0.35, 0.35, 0.08, 16);
-    const mat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.8, roughness: 0.2 });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(c.x, c.y, c.z);
-    mesh.rotation.x = Math.PI / 2;
-    mesh.userData.type = 'coin';
-    mesh.userData.value = c.value || 1;
-    mesh.userData.baseY = c.y;
-    mesh.userData.collected = false;
-    state.coins.push(mesh);
-    group.add(mesh);
+    const coinGroup = new THREE.Group();
+    const geo = new THREE.CylinderGeometry(0.38, 0.38, 0.09, 20);
+    const mat = new THREE.MeshStandardMaterial({ color: 0xffe033, metalness: 1.0, roughness: 0.0, emissive: 0xffaa00, emissiveIntensity: 0.5 });
+    const coinMesh = new THREE.Mesh(geo, mat);
+    coinMesh.rotation.x = Math.PI / 2;
+    coinGroup.add(coinMesh);
+    // 5 sparkle satellites orbiting the coin
+    for (let si = 0; si < 5; si++) {
+      const sGeo = new THREE.SphereGeometry(0.055, 5, 5);
+      const sMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffeeaa, emissiveIntensity: 1.5, roughness: 0, metalness: 0.5 });
+      const spark = new THREE.Mesh(sGeo, sMat);
+      const angle = (si / 5) * Math.PI * 2;
+      spark.userData.orbitAngle = angle;
+      spark.userData.orbitRadius = 0.6;
+      spark.userData.orbitSpeed = 2.2 + Math.random() * 1.0;
+      spark.position.set(Math.cos(angle) * 0.6, 0, Math.sin(angle) * 0.6);
+      coinGroup.add(spark);
+    }
+    coinGroup.position.set(c.x, c.y, c.z);
+    coinGroup.userData.type = 'coin';
+    coinGroup.userData.value = c.value || 1;
+    coinGroup.userData.baseY = c.y;
+    coinGroup.userData.collected = false;
+    coinGroup.userData.coinMesh = coinMesh;
+    state.coins.push(coinGroup);
+    group.add(coinGroup);
   }
 
-  // Checkpoints
+  // Checkpoints (flag on pole)
   for (const cp of (levelData.checkpoints || [])) {
-    const geo = new THREE.BoxGeometry(0.3, 2, 0.3);
-    const mat = new THREE.MeshStandardMaterial({ color: 0xff8800 });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(cp.x, cp.y + 1, cp.z);
-    mesh.userData.type = 'checkpoint';
-    mesh.userData.activated = false;
-    mesh.userData.index = cp.index;
-    state.checkpoints.push(mesh);
-    group.add(mesh);
+    const cpGroup = new THREE.Group();
+    // Pole
+    const poleGeo = new THREE.CylinderGeometry(0.07, 0.07, 3, 8);
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.7, roughness: 0.3 });
+    const pole = new THREE.Mesh(poleGeo, poleMat);
+    pole.position.set(0, 1.5, 0);
+    cpGroup.add(pole);
+    // Flag
+    const flagGeo = new THREE.PlaneGeometry(1.0, 0.6);
+    const flagMat = new THREE.MeshStandardMaterial({ color: 0xff8800, emissive: 0xff5500, emissiveIntensity: 0.3, side: THREE.DoubleSide });
+    const flag = new THREE.Mesh(flagGeo, flagMat);
+    flag.position.set(0.5, 2.9, 0);
+    cpGroup.add(flag);
+    cpGroup.position.set(cp.x, cp.y, cp.z);
+    cpGroup.userData.type = 'checkpoint';
+    cpGroup.userData.activated = false;
+    cpGroup.userData.index = cp.index;
+    cpGroup.userData.flag = flag;
+    state.checkpoints.push(cpGroup);
+    group.add(cpGroup);
   }
 
   // Hazards
   for (const h of (levelData.hazards || [])) {
     const geo = new THREE.BoxGeometry(h.sx || 2, h.sy || 0.5, h.sz || 2);
-    const color = h.type === 'lava' ? 0xff4d00 : h.type === 'spike' ? 0x666666 : 0xff0000;
-    const mat = new THREE.MeshStandardMaterial({ color, emissive: h.type === 'lava' ? 0x661a00 : 0x000000 });
+    const tType = hazTex[h.type] || hazTex.default;
+    const baseColor = h.type === 'lava' ? 0xff4d00 : h.type === 'spike' ? 0x666666 : 0xff2222;
+    const mat = new THREE.MeshStandardMaterial({ map: makeTexture(tType), color: baseColor, emissive: h.type === 'lava' ? 0x661a00 : 0x220000, emissiveIntensity: 0.4, roughness: 0.6 });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(h.x, h.y, h.z);
     mesh.userData.type = 'hazard';
@@ -787,6 +994,15 @@ function loadLevel(levelData) {
 
   scene.add(group);
 
+  // Track level Z extents for progress bar
+  let minZ = Infinity, maxZ = -Infinity;
+  const sp2 = levelData.playerSpawn || { x: 0, y: 2, z: 0 };
+  minZ = sp2.z;
+  if (levelData.finish) maxZ = Math.max(maxZ, levelData.finish.z || 0);
+  for (const p of (levelData.platforms || [])) { minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); }
+  state.levelSpawnZ = minZ;
+  state.levelEndZ   = maxZ > minZ ? maxZ : minZ + 80;
+
   // Spawn player
   const sp = levelData.playerSpawn || { x: 0, y: 2, z: 0 };
   state.px = sp.x; state.py = sp.y; state.pz = sp.z;
@@ -797,61 +1013,123 @@ function loadLevel(levelData) {
 
   createPlayer();
   setupLighting(levelData.worldId);
+
+  // Sky + flying obstacles
+  addSkyEffects(scene);
+  addFlyingObstacles(levelData, scene);
 }
 
 function createPlayer() {
   if (state.playerMesh) { scene.remove(state.playerMesh); }
-  if (state.hatMesh) { scene.remove(state.hatMesh); state.hatMesh = null; }
+  state.hatMesh = null;
 
   const pColor = skinColor(Save.data.equippedSkin || 'default');
-  const bodyGeo = new THREE.CapsuleGeometry(0.4, 1.0, 8, 16);
-  const bodyMat = new THREE.MeshStandardMaterial({ color: pColor });
-  const body = new THREE.Mesh(bodyGeo, bodyMat);
-  body.castShadow = true;
-  body.position.set(state.px, state.py, state.pz);
-  state.playerMesh = body;
-  scene.add(body);
+  const skinTone = 0xffd5a8;   // warm cartoon skin
+  const pantsColor = 0x1a3a6e; // dark jeans
 
-  // Eyes
-  const eyeGeo = new THREE.SphereGeometry(0.08, 8, 8);
-  const eyeMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-  const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-  eyeL.position.set(-0.15, 0.45, 0.35);
-  body.add(eyeL);
-  const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
-  eyeR.position.set(0.15, 0.45, 0.35);
-  body.add(eyeR);
+  const group = new THREE.Group();
+
+  // === LEGS ===
+  const legGeo = new THREE.BoxGeometry(0.21, 0.62, 0.22);
+  const legL = new THREE.Mesh(legGeo, new THREE.MeshStandardMaterial({ color: pantsColor }));
+  legL.position.set(-0.14, -0.69, 0);
+  legL.castShadow = true;
+  group.add(legL);
+  const legR = new THREE.Mesh(legGeo, new THREE.MeshStandardMaterial({ color: pantsColor }));
+  legR.position.set(0.14, -0.69, 0);
+  legR.castShadow = true;
+  group.add(legR);
+
+  // === HIPS ===
+  const hips = new THREE.Mesh(
+    new THREE.BoxGeometry(0.5, 0.24, 0.28),
+    new THREE.MeshStandardMaterial({ color: pantsColor })
+  );
+  hips.position.set(0, -0.26, 0);
+  hips.castShadow = true;
+  group.add(hips);
+
+  // === TORSO ===
+  const torso = new THREE.Mesh(
+    new THREE.BoxGeometry(0.54, 0.56, 0.3),
+    new THREE.MeshStandardMaterial({ color: pColor })
+  );
+  torso.position.set(0, 0.13, 0);
+  torso.castShadow = true;
+  group.add(torso);
+
+  // === ARMS (slightly angled outward) ===
+  const armGeo = new THREE.BoxGeometry(0.2, 0.54, 0.2);
+  const armL = new THREE.Mesh(armGeo, new THREE.MeshStandardMaterial({ color: pColor }));
+  armL.position.set(-0.37, 0.08, 0);
+  armL.rotation.z = 0.18;
+  armL.castShadow = true;
+  group.add(armL);
+  const armR = new THREE.Mesh(armGeo, new THREE.MeshStandardMaterial({ color: pColor }));
+  armR.position.set(0.37, 0.08, 0);
+  armR.rotation.z = -0.18;
+  armR.castShadow = true;
+  group.add(armR);
+
+  // === HEAD ===
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.28, 12, 10),
+    new THREE.MeshStandardMaterial({ color: skinTone })
+  );
+  head.position.set(0, 0.82, 0);
+  head.castShadow = true;
+  group.add(head);
+
+  // Eyes — white with black pupils
+  const eyeGeo = new THREE.SphereGeometry(0.075, 8, 8);
+  const eyeL = new THREE.Mesh(eyeGeo, new THREE.MeshStandardMaterial({ color: 0xffffff }));
+  eyeL.position.set(-0.11, 0.06, 0.23);
+  head.add(eyeL);
+  const eyeR = new THREE.Mesh(eyeGeo, new THREE.MeshStandardMaterial({ color: 0xffffff }));
+  eyeR.position.set(0.11, 0.06, 0.23);
+  head.add(eyeR);
 
   const pupilGeo = new THREE.SphereGeometry(0.04, 8, 8);
-  const pupilMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-  const pupilL = new THREE.Mesh(pupilGeo, pupilMat);
-  pupilL.position.set(0, 0, 0.06);
+  const pupilL = new THREE.Mesh(pupilGeo, new THREE.MeshStandardMaterial({ color: 0x111111 }));
+  pupilL.position.set(0, 0, 0.05);
   eyeL.add(pupilL);
-  const pupilR = new THREE.Mesh(pupilGeo, pupilMat);
-  pupilR.position.set(0, 0, 0.06);
+  const pupilR = new THREE.Mesh(pupilGeo, new THREE.MeshStandardMaterial({ color: 0x111111 }));
+  pupilR.position.set(0, 0, 0.05);
   eyeR.add(pupilR);
 
-  // Hat
+  // Mouth — small dark smile line
+  const mouth = new THREE.Mesh(
+    new THREE.BoxGeometry(0.14, 0.04, 0.04),
+    new THREE.MeshStandardMaterial({ color: 0x663322 })
+  );
+  mouth.position.set(0, -0.1, 0.27);
+  head.add(mouth);
+
+  // === HAT ===
   if (Save.data.equippedHat) {
     const hatItem = COSMETICS.find(c => c.id === Save.data.equippedHat);
     if (hatItem) {
       let hatGeo, hatMat;
       if (hatItem.id === 'hat_crown') {
-        hatGeo = new THREE.CylinderGeometry(0.25, 0.35, 0.3, 5);
+        hatGeo = new THREE.CylinderGeometry(0.22, 0.32, 0.28, 5);
         hatMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.7 });
       } else if (hatItem.id === 'hat_wizard') {
-        hatGeo = new THREE.ConeGeometry(0.3, 0.6, 8);
+        hatGeo = new THREE.ConeGeometry(0.28, 0.55, 8);
         hatMat = new THREE.MeshStandardMaterial({ color: 0x6633cc });
       } else {
-        hatGeo = new THREE.BoxGeometry(0.6, 0.1, 0.6);
+        hatGeo = new THREE.BoxGeometry(0.58, 0.1, 0.58);
         hatMat = new THREE.MeshStandardMaterial({ color: parseInt(hatItem.color.replace('#',''),16) });
       }
       const hat = new THREE.Mesh(hatGeo, hatMat);
-      hat.position.set(0, 0.85, 0);
-      body.add(hat);
+      hat.position.set(0, 1.12, 0); // on top of head
+      group.add(hat);
       state.hatMesh = hat;
     }
   }
+
+  group.position.set(state.px, state.py + 0.9, state.pz);
+  state.playerMesh = group;
+  scene.add(group);
 }
 
 function setupLighting(worldId) {
@@ -921,8 +1199,6 @@ function checkGround(px, py, pz, platforms) {
   for (const p of platforms) {
     if (feetBox.intersectsBox(p.userData.box)) return p;
   }
-  // Ground plane check
-  if (py <= 0.05 && py >= -0.5) return 'ground';
   return null;
 }
 
@@ -1027,13 +1303,9 @@ function update(dt) {
     state.coyoteTimer = COYOTE_TIME;
     state.doubleJumpUsed = false;
     if (state.vy < 0) state.vy = 0;
-    if (onGround !== 'ground') {
-      // Snap to platform top
-      const topY = onGround.userData.box.max.y;
-      if (state.py < topY + 0.15) state.py = topY + 0.1;
-    } else {
-      if (state.py < 0.1) state.py = 0.1;
-    }
+    // Snap to platform top
+    const topY = onGround.userData.box.max.y;
+    if (state.py < topY + 0.15) state.py = topY + 0.1;
   } else {
     state.grounded = false;
     state.coyoteTimer -= dt;
@@ -1071,8 +1343,8 @@ function update(dt) {
     state.playerMesh.position.set(state.px, state.py + 0.9, state.pz);
   }
 
-  // Fall reset
-  if (state.py < -20) respawn();
+  // Fall reset — triggers quickly so kids aren't falling forever
+  if (state.py < -5) respawn();
 
   // Moving platforms
   for (const mp of state.movingPlatforms) {
@@ -1116,10 +1388,25 @@ function update(dt) {
   }
 
   // Coins
+  const now = Date.now();
   for (const coin of state.coins) {
     if (coin.userData.collected) continue;
     coin.rotation.y += 3 * dt;
-    coin.position.y = coin.userData.baseY + Math.sin(Date.now() * 0.003) * 0.3;
+    coin.position.y = coin.userData.baseY + Math.sin(now * 0.003) * 0.3;
+    // Pulsing shine on coin mesh
+    if (coin.userData.coinMesh) {
+      coin.userData.coinMesh.material.emissiveIntensity = 0.3 + 0.7 * Math.abs(Math.sin(now * 0.004 + coin.userData.baseY));
+    }
+    // Animate sparkle satellite orbits
+    coin.children.forEach(child => {
+      if (child.userData.orbitAngle !== undefined) {
+        child.userData.orbitAngle += child.userData.orbitSpeed * dt;
+        const a = child.userData.orbitAngle;
+        const r = child.userData.orbitRadius;
+        child.position.set(Math.cos(a) * r, Math.sin(a * 0.7) * 0.18, Math.sin(a) * r);
+        child.material.emissiveIntensity = 0.8 + 0.7 * Math.abs(Math.sin(now * 0.007 + a));
+      }
+    });
 
     const dx = state.px - coin.position.x;
     const dy = (state.py + 0.9) - coin.position.y;
@@ -1128,6 +1415,21 @@ function update(dt) {
       coin.userData.collected = true;
       coin.visible = false;
       state.sessionCoins += coin.userData.value;
+      spawnParticleBurst(coin.position.clone(), 0xffe033, 14);
+      // Milestone check
+      const milestones = [3, 5, 8];
+      for (const ms of milestones) {
+        if (state.sessionCoins >= ms && state.lastMilestoneCoin < ms) {
+          state.lastMilestoneCoin = ms;
+          const msgs = {3:'⭐ 3 COINS!', 5:'🔥 5 COINS!', 8:'👑 8 COINS!'};
+          const cols = {3:'#ffdd33', 5:'#ff8844', 8:'#ff44ff'};
+          showFloatingText(msgs[ms], cols[ms]);
+          const flash = document.createElement('div');
+          flash.style.cssText = `position:fixed;inset:0;background:rgba(255,200,0,0.22);pointer-events:none;z-index:9990;animation:screenPulse 0.5s ease-out forwards;`;
+          document.body.appendChild(flash);
+          setTimeout(() => flash.remove(), 600);
+        }
+      }
     }
   }
 
@@ -1136,13 +1438,71 @@ function update(dt) {
     if (cp.userData.activated) continue;
     const dx = state.px - cp.position.x;
     const dz = state.pz - cp.position.z;
-    if (dx*dx + dz*dz < 4 && Math.abs(state.py - (cp.position.y - 1)) < 3) {
+    if (dx*dx + dz*dz < 4 && Math.abs(state.py - cp.position.y) < 3) {
       cp.userData.activated = true;
-      cp.material.color.setHex(0x33cc33);
+      if (cp.userData.flag) cp.userData.flag.material.color.setHex(0x33ee55);
+      if (cp.userData.flag) cp.userData.flag.material.emissive.setHex(0x00aa33);
       state.respawnX = cp.position.x;
-      state.respawnY = cp.position.y;
+      state.respawnY = cp.position.y + 1.5;
       state.respawnZ = cp.position.z;
+      triggerCheckpointEffect(cp.position.clone());
     }
+  }
+
+  // Flying obstacles
+  for (const fo of state.flyingObstacles) {
+    const m = fo.mesh;
+    m.userData.phase += fo.mesh.userData.speed * dt;
+    m.position.x = m.userData.centerX + Math.sin(m.userData.phase) * m.userData.amplitude;
+    m.rotation.x += 1.1 * dt;
+    m.rotation.z += 0.7 * dt;
+    // Hazard collision
+    const dx = state.px - m.position.x;
+    const dy = (state.py + 0.9) - m.position.y;
+    const dz = state.pz - m.position.z;
+    if (dx*dx + dy*dy + dz*dz < 2.5) {
+      if (state.shieldTimer <= 0) respawn();
+      else state.shieldTimer = 0;
+    }
+  }
+
+  // Particles
+  for (let i = state.particles.length - 1; i >= 0; i--) {
+    const p = state.particles[i];
+    p.life -= dt;
+    if (p.life <= 0) { scene.remove(p.mesh); state.particles.splice(i, 1); continue; }
+    p.mesh.position.x += p.vx * dt;
+    p.mesh.position.y += p.vy * dt;
+    p.mesh.position.z += p.vz * dt;
+    p.vy -= 12 * dt; // gravity
+    const t = p.life;
+    p.mesh.material.opacity = Math.min(1, t * 3);
+    p.mesh.material.transparent = true;
+    const s = 0.5 + t * 0.9;
+    p.mesh.scale.setScalar(s);
+  }
+
+  // Sky animation (clouds drift, birds flap)
+  if (state.skyGroup) {
+    state.skyGroup.children.forEach(obj => {
+      if (obj.userData.driftX !== undefined) {
+        // Cloud drift
+        obj.position.x += obj.userData.driftX * dt;
+        obj.position.z += obj.userData.driftZ * dt;
+        if (obj.position.x > 60) obj.position.x = -60;
+        if (obj.position.x < -60) obj.position.x = 60;
+        // Follow player Z slowly
+        obj.position.z = ((obj.position.z - state.pz + 160) % 160) + state.pz - 20;
+      } else if (obj.userData.speed !== undefined) {
+        // Bird movement
+        obj.position.x += obj.userData.speed * dt;
+        if (obj.position.x > 80) obj.position.x = -80;
+        obj.userData.flapTimer += dt * 5;
+        obj.children.forEach((wing, wi) => {
+          wing.rotation.z = (wi === 0 ? 1 : -1) * (0.3 + 0.4 * Math.sin(obj.userData.flapTimer));
+        });
+      }
+    });
   }
 
   // Hazards
@@ -1181,15 +1541,15 @@ function update(dt) {
   if (state.shieldTimer > 0) state.shieldTimer -= dt;
   if (state.shieldCooldown > 0) state.shieldCooldown -= dt;
 
-  // Shield visual
+  // Shield/boost visual — traverse all body meshes since playerMesh is now a Group
   if (state.playerMesh) {
-    if (state.shieldTimer > 0) {
-      state.playerMesh.material.emissive = new THREE.Color(0x1a4d66);
-    } else if (state.speedBurstTimer > 0) {
-      state.playerMesh.material.emissive = new THREE.Color(0x4d1a33);
-    } else {
-      state.playerMesh.material.emissive = new THREE.Color(0x000000);
-    }
+    let emissiveHex = 0x000000;
+    if (state.shieldTimer > 0) emissiveHex = 0x1a4d66;
+    else if (state.speedBurstTimer > 0) emissiveHex = 0x4d1a33;
+    const emissive = new THREE.Color(emissiveHex);
+    state.playerMesh.traverse(child => {
+      if (child.isMesh && child.material) child.material.emissive = emissive;
+    });
   }
 
   // Camera follow
@@ -1255,6 +1615,14 @@ function updateHUD() {
   const mins = Math.floor(state.sessionTime / 60);
   const secs = Math.floor(state.sessionTime % 60);
   document.getElementById('timer-display').textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+
+  // Progress bar
+  const progressBar = document.getElementById('progress-bar');
+  if (progressBar) {
+    const range = state.levelEndZ - state.levelSpawnZ;
+    const pct = range > 0 ? Math.min(100, Math.max(0, ((state.pz - state.levelSpawnZ) / range) * 100)) : 0;
+    progressBar.style.width = pct.toFixed(1) + '%';
+  }
 
   // Gamepad indicator
   let gpInd = document.getElementById('gamepad-indicator');
