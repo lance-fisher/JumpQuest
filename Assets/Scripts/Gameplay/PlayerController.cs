@@ -184,7 +184,7 @@ namespace JumpQuest.Gameplay
 
         private void HandleFallReset()
         {
-            if (transform.position.y < -20f)
+            if (transform.position.y < -5f)
             {
                 cc.enabled = false;
                 transform.position = respawnPosition;
